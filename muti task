@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi Task · Organizador inteligente</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #c084fc;
+            --accent: #22d3ee;
+            --danger: #fb7185;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --text-primary: white;
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --bg-gradient-start: #1e1b4b;
+            --bg-gradient-end: #020617;
+        }
+
+        [data-theme="light"] {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(0, 0, 0, 0.1);
+            --text-primary: #1e1b4b;
+            --text-secondary: rgba(0, 0, 0, 0.7);
+            --bg-gradient-start: #e0e7ff;
+            --bg-gradient-end: #c7d2fe;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: radial-gradient(circle at top left, var(--bg-gradient-start), var(--bg-gradient-end));
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            border-radius: 30px;
+            width: 480px;
+            max-width: 100%;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+
+        /* header / login */
+        .app-header { margin-bottom: 20px; }
+        .user-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--glass-border); }
+        .username-display { color: var(--accent); font-weight: 600; font-size: 0.95rem; background: rgba(34, 211, 238, 0.1); padding: 5px 12px; border-radius: 20px; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        header h1 { font-weight: 800; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2.2rem; }
+        header h1 span { color: var(--primary); font-weight: 300; }
+        header p { font-size: 0.85rem; opacity: 0.7; margin: 0; text-transform: capitalize; }
+
+        .stats-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
+        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px 8px; text-align: center; transition: 0.2s; }
+        .stat-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .stat-label { font-size: 0.7rem; opacity: 0.6; display: block; margin-bottom: 4px; }
+        .stat-value { font-size: 1.4rem; font-weight: 700; color: var(--accent); line-height: 1; }
+
+        .progress-container { margin: 20px 0; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 12px; }
+        .progress-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; margin-bottom: 8px; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.3s ease; border-radius: 4px; }
+        #completionRate { font-size: 0.8rem; opacity: 0.7; display: block; text-align: right; }
+
+        .category-filters { display: flex; gap: 6px; margin: 15px 0; flex-wrap: wrap; }
+        .filter-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 25px; padding: 6px 14px; font-size: 0.75rem; color: var(--text-primary); cursor: pointer; transition: 0.2s; font-weight: 500; }
+        .filter-btn:hover { background: rgba(192,132,252,0.2); border-color: var(--primary); }
+        .filter-btn.active { background: var(--primary); border-color: var(--primary); color: white; }
+
+        .quick-tasks { margin: 15px 0; }
+        .quick-tasks summary { cursor: pointer; color: var(--accent); font-size: 0.9rem; margin-bottom: 12px; opacity: 0.9; font-weight: 500; list-style: none; }
+        .quick-tasks summary:hover { opacity: 1; }
+        .task-buttons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; max-height: 200px; overflow-y: auto; padding: 5px; }
+        .task-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 25px; padding: 8px 16px; font-size: 0.8rem; color: var(--text-primary); cursor: pointer; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+        .task-btn:hover { background: var(--primary); border-color: var(--primary); transform: translateY(-1px); }
+
+        .input-container { margin: 20px 0; }
+        .input-container input, .input-container select, .input-container textarea { background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); padding: 14px 16px; border-radius: 16px; color: var(--text-primary); outline: none; transition: 0.3s; font-family: inherit; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+        .input-container input:focus, .input-container select:focus, .input-container textarea:focus { border-color: var(--primary); background: rgba(255,255,255,0.08); box-shadow: 0 0 0 3px rgba(192,132,252,0.1); }
+        .input-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .input-row input, .input-row select { flex: 1; margin-bottom: 0; }
+        .category-select { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: right 12px center; background-size: 16px; padding-right: 40px; }
+        [data-theme="light"] .category-select { background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e"); }
+
+        .add-btn { background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 16px; padding: 14px 20px; cursor: pointer; color: white; transition: 0.3s; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; border: 1px solid rgba(255,255,255,0.1); }
+        .add-btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 10px 20px -10px var(--primary); }
+
+        ul { margin: 20px 0 0 0; padding: 0; max-height: 400px; overflow-y: auto; list-style: none; }
+        li { background: rgba(255,255,255,0.03); border: 1px solid var(--glass-border); border-radius: 20px; padding: 16px; margin-bottom: 12px; animation: slideIn 0.3s ease-out; transition: 0.2s; }
+        li:hover { border-color: var(--primary); background: rgba(255,255,255,0.05); }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } }
+
+        .task-main { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .task-info { display: flex; align-items: center; gap: 12px; cursor: pointer; flex: 1; }
+        .circle { width: 20px; height: 20px; border: 2px solid var(--accent); border-radius: 50%; transition: 0.2s; }
+        .completed .circle { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+        .task-text { font-size: 0.95rem; font-weight: 500; }
+        .completed .task-text { text-decoration: line-through; opacity: 0.5; }
+
+        .task-actions { display: flex; gap: 8px; align-items: center; }
+        .favorite-btn { cursor: pointer; opacity: 0.3; transition: 0.2s; width: 18px; height: 18px; }
+        .favorite-btn.active { opacity: 1; color: var(--warning); fill: var(--warning); transform: scale(1.1); }
+        .favorite-btn:hover { opacity: 0.8; transform: scale(1.1); }
+        .delete-btn { cursor: pointer; opacity: 0.4; transition: 0.2s; width: 18px; height: 18px; }
+        .delete-btn:hover { opacity: 1; color: var(--danger); transform: scale(1.1); }
+
+        .task-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--glass-border); }
+        .category-badge { font-size: 0.65rem; padding: 4px 12px; border-radius: 20px; text-transform: capitalize; font-weight: 600; letter-spacing: 0.3px; }
+        .countdown { font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 20px; color: var(--accent); font-weight: 500; }
+        .urgent { color: var(--danger); background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.3); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+        .footer-stats { margin-top: 20px; display: flex; justify-content: space-between; align-items: center; padding-top: 15px; border-top: 1px solid var(--glass-border); }
+        #pendingCount { font-size: 0.8rem; opacity: 0.6; font-weight: 500; }
+        .footer-actions { display: flex; gap: 10px; align-items: center; }
+        .clear-btn, .export-btn, .logout-btn { background: none; border: 1px solid var(--glass-border); border-radius: 10px; padding: 6px 12px; color: var(--text-primary); cursor: pointer; font-size: 0.7rem; transition: 0.2s; display: inline-flex; align-items: center; gap: 5px; }
+        .clear-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(251,113,133,0.1); }
+        .export-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(34,211,238,0.1); }
+        .logout-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(251,113,133,0.1); }
+
+        /* login */
+        .login-container { text-align: center; }
+        .login-title { font-size: 2.5rem; margin-bottom: 10px; font-weight: 800; letter-spacing: -1px; }
+        .login-subtitle { opacity: 0.7; margin-bottom: 30px; font-size: 0.95rem; }
+        .login-form { display: flex; flex-direction: column; gap: 15px; margin: 25px 0; }
+        .login-btn { background: linear-gradient(135deg, var(--primary), var(--accent)); border: none; border-radius: 16px; padding: 14px; cursor: pointer; color: white; transition: 0.3s; font-weight: 600; font-size: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        .quick-categories { margin: 25px 0; text-align: left; }
+        .quick-categories h4 { font-size: 0.9rem; margin: 0 0 15px 0; opacity: 0.8; font-weight: 600; }
+        .category-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+        .category-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 25px; padding: 8px 16px; font-size: 0.8rem; color: var(--text-primary); cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; }
+        .category-btn:hover { background: rgba(192,132,252,0.2); border-color: var(--primary); }
+        .category-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+        .theme-switch { position: absolute; top: 20px; right: 20px; }
+        .theme-btn { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-primary); transition: 0.2s; }
+        .theme-btn:hover { background: var(--primary); border-color: var(--primary); transform: rotate(15deg); }
+
+        /* scroll */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+        .task-notes { font-size: 0.75rem; opacity: 0.6; padding: 5px 10px; background: rgba(0,0,0,0.1); border-radius: 8px; margin: 5px 0; }
+        textarea { resize: vertical; min-height: 60px; }
+
+        @media (max-width: 500px) { .glass-card { padding: 1.5rem; } .stats-container { gap: 5px; } .stat-value { font-size: 1.2rem; } .input-row { flex-direction: column; } .category-buttons { flex-direction: column; } }
+    </style>
+</head>
+<body>
+    <div class="glass-card" id="app-container"></div>
+
+    <script>
+        (function() {
+            // ---------- CONSTANTS ----------
+            const DEFAULT_TASKS = {
+                trabajo: [
+                    { text: 'Revisar correos importantes', hours: 2, icon: '📧', color: '#c084fc' },
+                    { text: 'Preparar presentación semanal', hours: 24, icon: '📊', color: '#f472b6' },
+                    { text: 'Reunión con equipo', hours: 48, icon: '👥', color: '#60a5fa' },
+                    { text: 'Planificar proyecto nuevo', hours: 72, icon: '📋', color: '#a78bfa' }
+                ],
+                personal: [
+                    { text: 'Hacer ejercicio', hours: 3, icon: '💪', color: '#34d399' },
+                    { text: 'Leer 30 minutos', hours: 5, icon: '📚', color: '#fbbf24' },
+                    { text: 'Llamar a familia', hours: 12, icon: '📞', color: '#f87171' },
+                    { text: 'Meditar 10 minutos', hours: 2, icon: '🧘', color: '#60a5fa' }
+                ],
+                estudio: [
+                    { text: 'Completar curso de JavaScript', hours: 72, icon: '💻', color: '#818cf8' },
+                    { text: 'Practicar algoritmos', hours: 6, icon: '🧮', color: '#c084fc' },
+                    { text: 'Ver tutorial de React', hours: 8, icon: '⚛️', color: '#38bdf8' },
+                    { text: 'Leer documentación', hours: 4, icon: '📖', color: '#f472b6' }
+                ],
+                hogar: [
+                    { text: 'Limpiar habitación', hours: 4, icon: '🧹', color: '#4ade80' },
+                    { text: 'Hacer la compra', hours: 10, icon: '🛒', color: '#facc15' },
+                    { text: 'Pagar facturas', hours: 48, icon: '💰', color: '#fb923c' },
+                    { text: 'Regar plantas', hours: 24, icon: '🌱', color: '#34d399' }
+                ]
+            };
+
+            // ---------- STATE ----------
+            let currentUser = localStorage.getItem('multitask-user') || null;
+            let currentFilter = 'all';
+            let currentTheme = localStorage.getItem('multitask-theme') || 'dark';
+            let countdownInterval = null;
+
+            // ---------- INIT ----------
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.setAttribute('data-theme', currentTheme);
+                if (currentUser) {
+                    showMainApp();
+                    initializeApp();
+                } else {
+                    showLogin();
+                }
+                if (Notification.permission === 'default') Notification.requestPermission();
+            });
+
+            // ---------- CORE UI ----------
+            function showLogin() {
+                const container = document.getElementById('app-container');
+                container.innerHTML = `
+                    <div class="login-container">
+                        <div class="theme-switch">
+                            <button onclick="toggleTheme()" class="theme-btn">
+                                <i data-lucide="${currentTheme === 'dark' ? 'moon' : 'sun'}"></i>
+                            </button>
+                        </div>
+                        <h1 class="login-title">Multi<span style="color: var(--primary);">Task</span></h1>
+                        <p class="login-subtitle">Organiza tu día con estilo</p>
+                        <div class="login-form">
+                            <input type="text" id="login-username" placeholder="Tu nombre" autocomplete="off">
+                            <input type="password" id="login-password" placeholder="Contraseña (opcional)">
+                            <button onclick="handleLogin()" class="login-btn">
+                                <i data-lucide="log-in"></i> Iniciar sesión
+                            </button>
+                        </div>
+                        <div class="quick-categories">
+                            <h4>📋 Explorar categorías</h4>
+                            <div class="category-buttons">
+                                <button class="category-btn" onclick="showCategoryPreview('trabajo')"><span class="category-dot" style="background:#c084fc;"></span> 💼 Trabajo</button>
+                                <button class="category-btn" onclick="showCategoryPreview('personal')"><span class="category-dot" style="background:#34d399;"></span> 🧘 Personal</button>
+                                <button class="category-btn" onclick="showCategoryPreview('estudio')"><span class="category-dot" style="background:#818cf8;"></span> 📚 Estudio</button>
+                                <button class="category-btn" onclick="showCategoryPreview('hogar')"><span class="category-dot" style="background:#4ade80;"></span> 🏠 Hogar</button>
+                            </div>
+                        </div>
+                        <details class="quick-tasks">
+                            <summary>📋 Ver tareas predeterminadas</summary>
+                            <div class="task-buttons" id="defaultTasksList"></div>
+                        </details>
+                    </div>
+                `;
+                updateDefaultTasksList();
+                lucide.createIcons();
+            }
+
+            function showMainApp() {
+                const container = document.getElementById('app-container');
+                container.innerHTML = `
+                    <div class="app-header">
+                        <div class="user-info">
+                            <span class="username-display">👤 ${currentUser}</span>
+                            <div class="header-actions">
+                                <button onclick="toggleTheme()" class="theme-btn"><i data-lucide="${currentTheme === 'dark' ? 'moon' : 'sun'}"></i></button>
+                                <button onclick="logout()" class="logout-btn">Cerrar sesión</button>
+                            </div>
+                        </div>
+                        <header><h1>Multi<span>Task</span></h1><p id="date-display"></p></header>
+                    </div>
+                    <div class="stats-container">
+                        <div class="stat-card"><span class="stat-label">Total</span><span class="stat-value" id="totalTasks">0</span></div>
+                        <div class="stat-card"><span class="stat-label">Completadas</span><span class="stat-value" id="completedTasks">0</span></div>
+                        <div class="stat-card"><span class="stat-label">Pendientes</span><span class="stat-value" id="pendingTasks">0</span></div>
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+                        <span id="completionRate">0% completado</span>
+                    </div>
+                    <details class="quick-tasks">
+                        <summary>⚡ Tareas rápidas por categoría</summary>
+                        <div class="category-filters">
+                            <button class="filter-btn ${currentFilter === 'all' ? 'active' : ''}" onclick="filterTasks('all')">Todas</button>
+                            <button class="filter-btn ${currentFilter === 'trabajo' ? 'active' : ''}" onclick="filterTasks('trabajo')">💼 Trabajo</button>
+                            <button class="filter-btn ${currentFilter === 'personal' ? 'active' : ''}" onclick="filterTasks('personal')">🧘 Personal</button>
+                            <button class="filter-btn ${currentFilter === 'estudio' ? 'active' : ''}" onclick="filterTasks('estudio')">📚 Estudio</button>
+                            <button class="filter-btn ${currentFilter === 'hogar' ? 'active' : ''}" onclick="filterTasks('hogar')">🏠 Hogar</button>
+                        </div>
+                        <div class="task-buttons" id="quickTaskButtons"></div>
+                    </details>
+                    <div class="input-container">
+                        <input type="text" id="taskInput" placeholder="¿Cuál es el siguiente paso?">
+                        <div class="input-row">
+                            <input type="datetime-local" id="taskDate">
+                            <select id="taskCategory" class="category-select">
+                                <option value="trabajo">💼 Trabajo</option><option value="personal">🧘 Personal</option><option value="estudio">📚 Estudio</option><option value="hogar">🏠 Hogar</option>
+                            </select>
+                        </div>
+                        <textarea id="taskNotes" placeholder="Notas adicionales (opcional)" rows="2"></textarea>
+                        <button onclick="addTask()" class="add-btn"><i data-lucide="plus"></i> Añadir tarea</button>
+                    </div>
+                    <ul id="taskList"></ul>
+                    <div class="footer-stats">
+                        <span id="pendingCount">0 pendientes</span>
+                        <div class="footer-actions">
+                            <button onclick="clearCompleted()" class="clear-btn"><i data-lucide="trash-2"></i> Limpiar</button>
+                            <button onclick="exportTasks()" class="export-btn"><i data-lucide="download"></i></button>
+                        </div>
+                    </div>
+                `;
+                updateQuickTaskButtons();
+                lucide.createIcons();
+            }
+
+            // ---------- LOGIN / LOGOUT / THEME ----------
+            window.handleLogin = function() {
+                const username = document.getElementById('login-username')?.value.trim();
+                if (!username) return alert('Por favor ingresa tu nombre');
+                currentUser = username;
+                localStorage.setItem('multitask-user', username);
+                showMainApp();
+                initializeApp();
+            };
+
+            window.logout = function() {
+                currentUser = null;
+                localStorage.removeItem('multitask-user');
+                if (countdownInterval) clearInterval(countdownInterval);
+                showLogin();
+            };
+
+            window.toggleTheme = function() {
+                currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                document.body.setAttribute('data-theme', currentTheme);
+                localStorage.setItem('multitask-theme', currentTheme);
+                const icon = document.querySelector('.theme-btn i');
+                if (icon) { icon.setAttribute('data-lucide', currentTheme === 'dark' ? 'moon' : 'sun'); lucide.createIcons(); }
+            };
+
+            // ---------- DEFAULT TASKS PREVIEW ----------
+            window.showCategoryPreview = function(cat) {
+                alert(`📋 Tareas de ${cat}:\n\n${DEFAULT_TASKS[cat].map(t => `• ${t.icon} ${t.text}`).join('\n')}`);
+            };
+
+            function updateDefaultTasksList() {
+                const container = document.getElementById('defaultTasksList');
+                if (!container) return;
+                let html = '';
+                for (const [cat, tasks] of Object.entries(DEFAULT_TASKS)) {
+                    tasks.forEach((task, idx) => {
+                        html += `<button class="task-btn" onclick="useDefaultTask('${cat}', ${idx})" style="border-color:${task.color}">${task.icon} ${task.text}</button>`;
+                    });
+                }
+                container.innerHTML = html;
+            }
+
+            window.useDefaultTask = function(category, index) {
+                const task = DEFAULT_TASKS[category][index];
+                const deadline = new Date(Date.now() + task.hours * 60 * 60 * 1000);
+                const year = deadline.getFullYear();
+                const month = String(deadline.getMonth() + 1).padStart(2,'0');
+                const day = String(deadline.getDate()).padStart(2,'0');
+                const hours = String(deadline.getHours()).padStart(2,'0');
+                const minutes = String(deadline.getMinutes()).padStart(2,'0');
+                const taskInput = document.getElementById('taskInput');
+                const dateInput = document.getElementById('taskDate');
+                const catSelect = document.getElementById('taskCategory');
+                if (taskInput) taskInput.value = task.text;
+                if (dateInput) dateInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                if (catSelect) catSelect.value = category;
+            };
+
+            // ---------- FILTER & QUICK TASKS ----------
+            window.filterTasks = function(filter) {
+                currentFilter = filter;
+                if (!currentUser) return;
+                showMainApp();
+                loadTasks();
+                updateQuickTaskButtons();
+            };
+
+            function updateQuickTaskButtons() {
+                const container = document.getElementById('quickTaskButtons');
+                if (!container) return;
+                let html = '';
+                for (const [cat, tasks] of Object.entries(DEFAULT_TASKS)) {
+                    if (currentFilter === 'all' || currentFilter === cat) {
+                        tasks.forEach((task, idx) => {
+                            html += `<button class="task-btn" onclick="useDefaultTask('${cat}', ${idx})" style="border-color:${task.color}">${task.icon} ${task.text}</button>`;
+                        });
+                    }
+                }
+                container.innerHTML = html;
+            }
+
+            // ---------- TASK CRUD ----------
+            function initializeApp() {
+                displayCurrentDate();
+                loadTasks();
+                if (countdownInterval) clearInterval(countdownInterval);
+                countdownInterval = setInterval(updateAllCountdowns, 1000);
+            }
+
+            function displayCurrentDate() {
+                const el = document.getElementById('date-display');
+                if (el) el.innerText = new Date().toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long' });
+            }
+
+            window.addTask = function() {
+                const input = document.getElementById('taskInput');
+                const dateInput = document.getElementById('taskDate');
+                const catSelect = document.getElementById('taskCategory');
+                const notes = document.getElementById('taskNotes');
+                if (!input?.value || !dateInput?.value) return alert('Completa tarea y fecha');
+                const task = {
+                    id: Date.now(),
+                    text: input.value,
+                    deadline: new Date(dateInput.value).getTime(),
+                    completed: false,
+                    category: catSelect ? catSelect.value : 'trabajo',
+                    favorite: false,
+                    createdAt: Date.now(),
+                    notes: notes ? notes.value : ''
+                };
+                const tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                tasks.push(task);
+                localStorage.setItem('tasks-pro', JSON.stringify(tasks));
+                if (task.deadline - Date.now() < 1800000) showNotification('⚠️ Tarea urgente', `"${task.text}" vence pronto`);
+                renderTask(task);
+                input.value = ''; dateInput.value = ''; if (notes) notes.value = '';
+                updateStats();
+            };
+
+            function renderTask(task) {
+                const list = document.getElementById('taskList');
+                if (!list) return;
+                if (currentFilter !== 'all' && task.category !== currentFilter) return;
+
+                const categoryColors = { trabajo:'#c084fc', personal:'#34d399', estudio:'#818cf8', hogar:'#4ade80' };
+                const li = document.createElement('li');
+                li.id = `task-${task.id}`;
+                li.className = `task-item category-${task.category} ${task.completed ? 'completed' : ''} ${task.favorite ? 'favorite' : ''}`;
+                li.innerHTML = `
+                    <div class="task-main">
+                        <div class="task-info" onclick="toggleTask(${task.id})">
+                            <div class="circle" style="border-color: ${categoryColors[task.category]}"></div>
+                            <span class="task-text">${task.text}</span>
+                        </div>
+                        <div class="task-actions">
+                            <i data-lucide="star" class="favorite-btn ${task.favorite ? 'active' : ''}" onclick="event.stopPropagation(); toggleFavorite(${task.id})"></i>
+                            <i data-lucide="x" class="delete-btn" onclick="event.stopPropagation(); deleteTask(${task.id})"></i>
+                        </div>
+                    </div>
+                    ${task.notes ? `<div class="task-notes">📝 ${task.notes}</div>` : ''}
+                    <div class="task-meta">
+                        <span class="category-badge" style="background: ${categoryColors[task.category]}20; color: ${categoryColors[task.category]}">${task.category}</span>
+                        <div class="countdown" id="timer-${task.id}">Iniciando...</div>
+                    </div>
+                `;
+                list.appendChild(li);
+                lucide.createIcons();
+                updateSingleTimer(task);
+            }
+
+            window.toggleTask = function(id) {
+                let tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                tasks = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t);
+                localStorage.setItem('tasks-pro', JSON.stringify(tasks));
+                const el = document.getElementById(`task-${id}`);
+                if (el) {
+                    el.classList.toggle('completed');
+                    if (tasks.find(t => t.id === id).completed) showMotivationalMessage();
+                }
+                updateStats();
+            };
+
+            window.toggleFavorite = function(id) {
+                let tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                tasks = tasks.map(t => t.id === id ? { ...t, favorite: !t.favorite } : t);
+                localStorage.setItem('tasks-pro', JSON.stringify(tasks));
+                const taskEl = document.getElementById(`task-${id}`);
+                if (taskEl) {
+                    taskEl.classList.toggle('favorite');
+                    taskEl.querySelector('.favorite-btn')?.classList.toggle('active');
+                }
+            };
+
+            window.deleteTask = function(id) {
+                if (!confirm('¿Eliminar esta tarea?')) return;
+                let tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                tasks = tasks.filter(t => t.id !== id);
+                localStorage.setItem('tasks-pro', JSON.stringify(tasks));
+                const taskEl = document.getElementById(`task-${id}`);
+                if (taskEl) {
+                    taskEl.style.animation = 'slideIn 0.3s reverse';
+                    setTimeout(() => { taskEl.remove(); updateStats(); }, 200);
+                }
+            };
+
+            window.clearCompleted = function() {
+                if (!confirm('¿Eliminar todas las completadas?')) return;
+                let tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                tasks = tasks.filter(t => !t.completed);
+                localStorage.setItem('tasks-pro', JSON.stringify(tasks));
+                const list = document.getElementById('taskList');
+                if (list) { list.innerHTML = ''; tasks.forEach(renderTask); }
+                updateStats();
+            };
+
+            function loadTasks() {
+                const list = document.getElementById('taskList');
+                if (!list) return;
+                list.innerHTML = '';
+                const tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                tasks.forEach(renderTask);
+                updateStats();
+            }
+
+            function updateStats() {
+                const tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                const total = tasks.length;
+                const completed = tasks.filter(t => t.completed).length;
+                const pending = total - completed;
+                const progress = total ? (completed / total) * 100 : 0;
+                document.getElementById('totalTasks') && (document.getElementById('totalTasks').innerText = total);
+                document.getElementById('completedTasks') && (document.getElementById('completedTasks').innerText = completed);
+                document.getElementById('pendingTasks') && (document.getElementById('pendingTasks').innerText = pending);
+                const fill = document.getElementById('progressFill');
+                if (fill) fill.style.width = `${progress}%`;
+                const rate = document.getElementById('completionRate');
+                if (rate) rate.innerText = `${Math.round(progress)}% completado`;
+                const pend = document.getElementById('pendingCount');
+                if (pend) pend.innerText = `${pending} pendientes`;
+            }
+
+            // ---------- TIMERS ----------
+            function updateAllCountdowns() {
+                const tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                tasks.forEach(t => { if (!t.completed) updateSingleTimer(t); });
+            }
+
+            function updateSingleTimer(task) {
+                const display = document.getElementById(`timer-${task.id}`);
+                if (!display) return;
+                const now = Date.now();
+                const diff = task.deadline - now;
+                if (diff <= 0) {
+                    display.innerText = "⚠️ TIEMPO AGOTADO";
+                    display.classList.add('urgent');
+                    return;
+                }
+                const days = Math.floor(diff / (1000*60*60*24));
+                const hours = Math.floor((diff % (1000*60*60*24)) / (1000*60*60));
+                const minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
+                const seconds = Math.floor((diff % (1000*60)) / 1000);
+                let text = '';
+                if (days > 0) text = `${days}d ${hours}h`;
+                else if (hours > 0) text = `${hours}h ${minutes}m`;
+                else text = `${minutes}m ${seconds}s`;
+                display.innerText = `⏳ ${text}`;
+                if (diff < 1800000) display.classList.add('urgent');
+                else display.classList.remove('urgent');
+            }
+
+            // ---------- NOTIFICATIONS & MOTIVATION ----------
+            function showNotification(title, body) {
+                if (Notification.permission === 'granted') new Notification(title, { body, icon:'https://cdn-icons-png.flaticon.com/512/1632/1632598.png' });
+            }
+
+            function showMotivationalMessage() {
+                const msgs = ['🎉 ¡Buen trabajo!','⭐ ¡Sigue así!','💪 ¡Una menos!','🌟 ¡Excelente!','🎯 ¡Meta cumplida!'];
+                const msg = document.createElement('div');
+                msg.innerText = msgs[Math.floor(Math.random() * msgs.length)];
+                msg.style.cssText = 'position:fixed; top:20px; right:20px; background:linear-gradient(135deg,var(--primary),var(--accent)); color:white; padding:10px 20px; border-radius:30px; animation:slideIn 0.3s; z-index:1000;';
+                document.body.appendChild(msg);
+                setTimeout(() => { msg.style.animation = 'slideIn 0.3s reverse'; setTimeout(() => msg.remove(), 300); }, 2000);
+            }
+
+            window.exportTasks = function() {
+                const tasks = JSON.parse(localStorage.getItem('tasks-pro') || '[]');
+                const blob = new Blob([JSON.stringify(tasks, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `multitask-${currentUser}-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+
+            // extra: exponer algunas funciones globales para los onclick
+            window.useDefaultTask = window.useDefaultTask;
+            window.filterTasks = window.filterTasks;
+            window.toggleTheme = window.toggleTheme;
+            window.handleLogin = window.handleLogin;
+            window.logout = window.logout;
+            window.showCategoryPreview = window.showCategoryPreview;
+            window.addTask = window.addTask;
+            window.toggleTask = window.toggleTask;
+            window.toggleFavorite = window.toggleFavorite;
+            window.deleteTask = window.deleteTask;
+            window.clearCompleted = window.clearCompleted;
+            window.exportTasks = window.exportTasks;
+        })();
+    </script>
+</body>
+</html>
